@@ -1,3 +1,11 @@
+//
+//  FXManager.swift
+//  SmartPECS
+//
+//  Created by Minh Anh Nguyễn Trần on 5/11/26.
+//
+
+
 import Foundation
 import UIKit
 import AudioToolbox // Dùng để gọi âm thanh hệ thống của Apple

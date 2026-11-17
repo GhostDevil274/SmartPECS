@@ -1,54 +1,36 @@
-//
-//  ParentViewModel.swift
-//  SmartPECS
-//
-//  Created by Minh Anh Nguyễn Trần on 5/11/26.
-//
-
 import Foundation
 import Combine
 
 class ParentViewModel: ObservableObject {
-    @Published var enteredPIN: String = ""
-    @Published var isAuthenticated: Bool = false
-    @Published var isError: Bool = false
+    @Published var isUnlocked: Bool = false
+    @Published var questionString: String = ""
+    @Published var userInput: String = ""
+    @Published var showError: Bool = false
     
-    // Mã PIN mặc định (Sau này có thể nâng cấp lưu vào UserDefaults)
-    private let correctPIN = "1234"
+    private var correctAnswer: Int = 0
     
-    func enterDigit(_ digit: String) {
-        if enteredPIN.count < 4 {
-            enteredPIN += digit
-        }
-        
-        // Tự động kiểm tra khi đủ 4 số
-        if enteredPIN.count == 4 {
-            verifyPIN()
-        }
+    init() {
+        generateQuestion()
     }
     
-    func deleteDigit() {
-        if !enteredPIN.isEmpty {
-            enteredPIN.removeLast()
-        }
-        isError = false
+    // Tạo phép tính nhân ngẫu nhiên (từ 2 đến 9)
+    func generateQuestion() {
+        let num1 = Int.random(in: 2...9)
+        let num2 = Int.random(in: 2...9)
+        correctAnswer = num1 * num2
+        questionString = "\(num1) x \(num2) = ?"
+        userInput = ""
+        showError = false
     }
     
-    private func verifyPIN() {
-        if enteredPIN == correctPIN {
-            isAuthenticated = true
-            isError = false
+    // Kiểm tra kết quả phụ huynh nhập
+    func verifyAnswer() {
+        if let answer = Int(userInput), answer == correctAnswer {
+            isUnlocked = true
         } else {
-            isError = true
-            // Tự động xóa PIN sai sau 0.5s để nhập lại
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.enteredPIN = ""
-            }
+            showError = true
+            userInput = ""
+            generateQuestion() // Đổi câu hỏi khác nếu nhập sai
         }
-    }
-    
-    func logout() {
-        isAuthenticated = false
-        enteredPIN = ""
     }
 }

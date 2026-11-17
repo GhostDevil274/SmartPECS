@@ -37,7 +37,6 @@ class CameraManager: NSObject, ObservableObject {
     
     // 2. Thiết lập luồng hình ảnh
     private func setupCamera() {
-        // Giảm độ phân giải xuống VGA (640x480) để tối ưu hiệu năng Edge AI
         captureSession.sessionPreset = .vga640x480
         
         guard let frontCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front),
@@ -48,7 +47,6 @@ class CameraManager: NSObject, ObservableObject {
         }
         
         let videoOutput = AVCaptureVideoDataOutput()
-        // Tạo một luồng (thread) riêng để không làm đơ giao diện chính
         videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "videoQueue"))
         
         if captureSession.canAddOutput(videoOutput) {
@@ -56,15 +54,21 @@ class CameraManager: NSObject, ObservableObject {
             
             // Xoay video cho đúng chiều dọc và lật gương (như soi gương thật)
             if let connection = videoOutput.connection(with: .video) {
-                connection.videoOrientation = .portrait
-                connection.isVideoMirrored = true
+                // Cập nhật cho iOS 17+: Dùng videoRotationAngle thay cho videoOrientation bị deprecated
+                if connection.isVideoRotationAngleSupported(90) {
+                    connection.videoRotationAngle = 90
+                }
+                if connection.isVideoMirroringSupported {
+                    connection.isVideoMirrored = true
+                }
             }
         }
     }
     
     // 3. Điều khiển Bật/Tắt
     func startSession() {
-        DispatchQueue.global(qos: .background).async {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
             if !self.captureSession.isRunning {
                 self.captureSession.startRunning()
             }
@@ -72,9 +76,15 @@ class CameraManager: NSObject, ObservableObject {
     }
     
     func stopSession() {
-        if captureSession.isRunning {
-            captureSession.stopRunning()
+        // Đã sửa: Dừng đúng đối tượng captureSession của class này
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+            if self.captureSession.isRunning {
+                self.captureSession.stopRunning()
+            }
         }
+        
+        // Tuyệt đối không gọi TTSManager.shared.stop() ở đây để tránh lỗi mất tiếng khi qua màn
     }
 }
 

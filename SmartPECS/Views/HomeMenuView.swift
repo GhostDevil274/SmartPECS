@@ -1,64 +1,159 @@
-//
-//  HomeMenuView.swift
-//  SmartPECS
-//
-//  Created by Minh Anh Nguyễn Trần on 5/11/26.
-//
-
 import SwiftUI
 
 struct HomeMenuView: View {
+    @AppStorage("hasSeenOnboarding") var hasSeenOnboarding: Bool = false
+    
+    @State private var showParentGate = false
+    @State private var mathAnswer = ""
+    @State private var navigateToParent = false
+    @State private var num1 = Int.random(in: 5...15)
+    @State private var num2 = Int.random(in: 5...15)
+    
+    let columns = [GridItem(.flexible(), spacing: 20), GridItem(.flexible(), spacing: 20)]
+    
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
+        NavigationView {
+            ZStack {
+                SensoryTheme.bgPrimary.ignoresSafeArea()
                 
-                // 1. Nút chuyển sang Bảng giao tiếp PECS
-                NavigationLink(destination: PecsBoardView()) {
-                    HStack {
-                        Image(systemName: "bubble.left.and.bubble.right.fill")
-                            .font(.largeTitle)
-                        Text("Bảng PECS")
-                            .font(.title2.bold())
-                        Spacer()
+                VStack(spacing: 25) {
+                    // 1. HEADER
+                    VStack(spacing: 8) {
+                        // Đồng bộ Icon Bộ Não cho màn hình Home
+                        Image(systemName: "brain.head.profile")
+                            .font(.system(size: 45))
+                            .foregroundColor(.orange)
+                        
+                        Text("SmartPECS")
+                            .font(.system(size: 30, weight: .heavy, design: .rounded))
+                            // Màu chữ đậm không bị chìm vào nền
+                            .foregroundColor(Color(red: 0.17, green: 0.24, blue: 0.31))
                     }
-                    .padding()
-                    .frame(maxWidth: .infinity, minHeight: 100)
-                    .background(SensoryTheme.cardAction)
-                    .foregroundColor(SensoryTheme.textMain)
-                    .cornerRadius(16)
-                }
-
-                // 2. Nút chuyển sang Gương Cảm Xúc
-                NavigationLink(destination: EmotionMirrorView()) {
-                    HStack {
-                        Image(systemName: "camera.viewfinder")
-                            .font(.largeTitle)
-                        Text("Gương Cảm Xúc")
-                            .font(.title2.bold())
-                        Spacer()
+                    .padding(.top, 20)
+                    
+                    // 2. LƯỚI 2x2
+                    LazyVGrid(columns: columns, spacing: 20) {
+                        NavigationLink(destination: PecsBoardView()) {
+                            SquareMenuCard(
+                                title: "Giao Tiếp",
+                                icon: "hand.tap.fill",
+                                bgColor: Color.blue.opacity(0.15),
+                                iconColor: .blue // Chữ cũng sẽ mang màu Xanh Dương
+                            )
+                        }
+                        
+                        NavigationLink(destination: GameSessionView()) {
+                            SquareMenuCard(
+                                title: "Chơi & Học",
+                                icon: "gamecontroller.fill",
+                                bgColor: Color.green.opacity(0.15),
+                                iconColor: .green // Chữ Xanh Lá
+                            )
+                        }
+                        
+                        NavigationLink(destination: EmotionMirrorView()) {
+                            SquareMenuCard(
+                                title: "Cảm Xúc",
+                                icon: "face.smiling.fill",
+                                bgColor: Color.orange.opacity(0.15),
+                                iconColor: .orange // Chữ Cam
+                            )
+                        }
+                        
+                        NavigationLink(destination: RelaxCornerView()) {
+                            SquareMenuCard(
+                                title: "Thư Giãn",
+                                icon: "moon.stars.fill",
+                                bgColor: Color.purple.opacity(0.15),
+                                iconColor: .purple // Chữ Tím
+                            )
+                        }
                     }
-                    .padding()
-                    .frame(maxWidth: .infinity, minHeight: 100)
-                    .background(SensoryTheme.cardPlay)
-                    .foregroundColor(SensoryTheme.textMain)
-                    .cornerRadius(16)
+                    .padding(.horizontal, 25)
+                    
+                    Spacer()
+                    
+                    // 3. NÚT PHỤ HUYNH
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        generateNewMathProblem()
+                        showParentGate = true
+                    }) {
+                        HStack {
+                            Image(systemName: "gearshape.fill")
+                            Text("Khu vực Phụ huynh")
+                        }
+                        .font(.headline)
+                        .foregroundColor(.gray)
+                        .padding(.vertical, 14)
+                        .padding(.horizontal, 30)
+                        .background(Color.gray.opacity(0.15))
+                        .cornerRadius(25)
+                    }
+                    .padding(.bottom, 20)
+                    
+                    NavigationLink(destination: ParentSettingsView(), isActive: $navigateToParent) {
+                        EmptyView()
+                    }
                 }
-
-                Spacer()
             }
-            .padding()
-            .background(SensoryTheme.bgPrimary.ignoresSafeArea())
-            .navigationTitle("Smart PECS")
-            // 3. Nút bánh răng cài đặt (Góc trên bên phải)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink(destination: ParentLockView()) {
-                        Image(systemName: "gearshape.fill")
-                            .font(.title2)
-                            .foregroundColor(SensoryTheme.textSecondary)
-                    }
-                }
+            .alert("Cổng Bảo Mật", isPresented: $showParentGate) {
+                TextField("Nhập kết quả", text: $mathAnswer)
+                    .keyboardType(.numberPad)
+                Button("Xác nhận", action: checkMathGate)
+                Button("Hủy", role: .cancel) { mathAnswer = "" }
+            } message: {
+                Text("Vui lòng giải phép tính:\n\(num1) + \(num2) = ?")
+            }
+            .fullScreenCover(isPresented: Binding(
+                get: { !hasSeenOnboarding },
+                set: { _ in }
+            )) {
+                OnboardingView()
             }
         }
+        .navigationViewStyle(StackNavigationViewStyle())
+    }
+    
+    func generateNewMathProblem() {
+        num1 = Int.random(in: 5...15)
+        num2 = Int.random(in: 5...15)
+        mathAnswer = ""
+    }
+    
+    func checkMathGate() {
+        if Int(mathAnswer) == (num1 + num2) {
+            navigateToParent = true
+        } else {
+            // (Giả sử bạn có FXManager, nếu không thì cứ bỏ dòng này đi)
+            FXManager.shared.playError()
+        }
+        mathAnswer = ""
     }
 }
+
+// MARK: - Component Thẻ Vuông Layout Mới
+struct SquareMenuCard: View {
+    let title: String
+    let icon: String
+    let bgColor: Color
+    let iconColor: Color
+    
+    var body: some View {
+        VStack(spacing: 15) {
+            Image(systemName: icon)
+                .font(.system(size: 45))
+                .foregroundColor(iconColor)
+            
+            Text(title)
+                .font(.headline.bold())
+                // Sửa màu chữ thành màu của icon thay vì màu xám, tạo độ tương phản cực tốt với nền thẻ nhạt
+                .foregroundColor(.black)
+        }
+        .frame(maxWidth: .infinity, minHeight: 140)
+        .background(bgColor)
+        .cornerRadius(25)
+        .shadow(color: iconColor.opacity(0.15), radius: 10, y: 5)
+    }
+}
+

@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 struct GameSessionView: View {
     @StateObject private var gameManager = GameManager()
@@ -10,7 +11,9 @@ struct GameSessionView: View {
                 Text("Màn: \(gameManager.currentLevelNumber)")
                     .font(.headline)
                 Spacer()
-                Text("Điểm: \(gameManager.score)")
+                
+                // ĐÃ SỬA: Thay thế gameManager.score bằng gameManager.totalCorrect
+                Text("Điểm: \(gameManager.totalCorrect)")
                     .font(.headline).foregroundColor(.orange)
             }
             .padding()
