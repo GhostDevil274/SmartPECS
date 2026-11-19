@@ -19,14 +19,12 @@ struct HomeMenuView: View {
                 VStack(spacing: 25) {
                     // 1. HEADER
                     VStack(spacing: 8) {
-                        // Đồng bộ Icon Bộ Não cho màn hình Home
                         Image(systemName: "brain.head.profile")
                             .font(.system(size: 45))
                             .foregroundColor(.orange)
                         
                         Text("SmartPECS")
                             .font(.system(size: 30, weight: .heavy, design: .rounded))
-                            // Màu chữ đậm không bị chìm vào nền
                             .foregroundColor(Color(red: 0.17, green: 0.24, blue: 0.31))
                     }
                     .padding(.top, 20)
@@ -38,7 +36,7 @@ struct HomeMenuView: View {
                                 title: "Giao Tiếp",
                                 icon: "hand.tap.fill",
                                 bgColor: Color.blue.opacity(0.15),
-                                iconColor: .blue // Chữ cũng sẽ mang màu Xanh Dương
+                                iconColor: .blue
                             )
                         }
                         
@@ -47,7 +45,7 @@ struct HomeMenuView: View {
                                 title: "Chơi & Học",
                                 icon: "gamecontroller.fill",
                                 bgColor: Color.green.opacity(0.15),
-                                iconColor: .green // Chữ Xanh Lá
+                                iconColor: .green
                             )
                         }
                         
@@ -56,7 +54,7 @@ struct HomeMenuView: View {
                                 title: "Cảm Xúc",
                                 icon: "face.smiling.fill",
                                 bgColor: Color.orange.opacity(0.15),
-                                iconColor: .orange // Chữ Cam
+                                iconColor: .orange
                             )
                         }
                         
@@ -65,7 +63,7 @@ struct HomeMenuView: View {
                                 title: "Thư Giãn",
                                 icon: "moon.stars.fill",
                                 bgColor: Color.purple.opacity(0.15),
-                                iconColor: .purple // Chữ Tím
+                                iconColor: .purple
                             )
                         }
                     }
@@ -92,6 +90,7 @@ struct HomeMenuView: View {
                     }
                     .padding(.bottom, 20)
                     
+                    // NAVIGATION SANG KHU VỰC PHỤ HUYNH
                     NavigationLink(destination: ParentSettingsView(), isActive: $navigateToParent) {
                         EmptyView()
                     }
@@ -111,6 +110,8 @@ struct HomeMenuView: View {
             )) {
                 OnboardingView()
             }
+            // Ẩn Navigation Bar mặc định ở trang chủ để UI được thoáng
+            .navigationBarHidden(true)
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }
@@ -147,7 +148,6 @@ struct SquareMenuCard: View {
             
             Text(title)
                 .font(.headline.bold())
-                // Sửa màu chữ thành màu của icon thay vì màu xám, tạo độ tương phản cực tốt với nền thẻ nhạt
                 .foregroundColor(.black)
         }
         .frame(maxWidth: .infinity, minHeight: 140)
@@ -156,4 +156,3 @@ struct SquareMenuCard: View {
         .shadow(color: iconColor.opacity(0.15), radius: 10, y: 5)
     }
 }
-

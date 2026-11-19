@@ -11,8 +11,21 @@
     ],
   },
   "files": [
-    { "kind": "folder", "path": "SmartPECS", "target-membership": [ "SmartPECS" ] },
     {
+      "kind": "folder",
+      "path": "SmartPECS",
+      "target-membership": [
+        "SmartPECS",
+      ],
+      "membership-exceptions": [
+        {
+          "target": "SmartPECS",
+          "exclusions": [
+            "Info.plist",
+          ],
+        },
+      ],
+    }, {
       "kind": "group",
       "name": "Products",
       "children": [
@@ -39,6 +52,7 @@
         "DEVELOPMENT_TEAM": "73CCW9Q39N",
         "ENABLE_PREVIEWS": "YES",
         "GENERATE_INFOPLIST_FILE": "YES",
+        "INFOPLIST_FILE": "SmartPECS/Info.plist",
         "INFOPLIST_KEY_NSCameraUsageDescription": "Ứng dụng cần quyền truy cập camera để quét và nhận diện nụ cười của bạn.",
         "INFOPLIST_KEY_UIApplicationSceneManifest_Generation": "YES",
         "INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents": "YES",

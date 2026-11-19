@@ -69,15 +69,23 @@ struct DynamicFlashcardView: View {
             .padding()
         }
         .onAppear {
-            // Bốc ngẫu nhiên 1 ảnh cho mỗi thẻ ngay khi màn hình vừa xuất hiện
+            // [GIỮ NGUYÊN 100%] Logic bốc ảnh ngẫu nhiên của bạn
             var chosenImages: [String: String] = [:]
             for card in options {
                 chosenImages[card.id] = card.randomImage
             }
             self.cardImages = chosenImages
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        }
+        // [PHẦN SỬA LỖI ÂM THANH] Quản lý vòng đời TTS tự động dựa trên thẻ mục tiêu
+        .task(id: targetCard.id + options.map { $0.id }.joined(separator: "-")) {
+            do {
+                // Đợi 0.5s. Nếu Session ID thay đổi trong lúc đang đợi, Task này TỰ ĐỘNG BỊ HỦY.
+                try await Task.sleep(nanoseconds: 500_000_000)
+                
+                // Nếu Task an toàn đi qua 0.5s (người chơi không lướt qua màn quá nhanh), phát Voice.
                 TTSManager.shared.speak("Đâu là \(targetCard.title)?")
+            } catch {
+                // Task bị hủy khi qua màn mới -> Âm thanh cũ bị dập tắt, không bao giờ đọc đè hay trễ nhịp.
             }
         }
     }

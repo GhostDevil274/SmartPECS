@@ -1,98 +1,77 @@
+//
+//  RelaxAudioEngine.swift
+//  SmartPECS
+//
+//  Created by Minh Anh Nguyễn Trần on 17/11/26.
+//
+
+
 import AVFoundation
+import Combine
 import Foundation
 
 class RelaxAudioEngine: ObservableObject {
-    private var engine = AVAudioEngine()
-    private var sourceNode: AVAudioSourceNode?
+    private var player: AVQueuePlayer?
+    private var playerLooper: AVPlayerLooper?
     
     @Published var isPlaying: Bool = false
     @Published var volume: Float = 0.5 {
         didSet {
-            engine.mainMixerNode.outputVolume = volume
+            player?.volume = volume
         }
     }
     
     init() {
-        setupEngine()
+        setupPlayer()
     }
     
-    private func setupEngine() {
-        let format = engine.outputNode.inputFormat(forBus: 0)
-        let sampleRate = Float(format.sampleRate)
+    private func setupPlayer() {
+        // ĐÂY LÀ NƠI GẮN LINK NHẠC: Bạn có thể thay bằng bất kỳ link nhạc trực tiếp (.mp3) nào trên mạng.
+        // Link mẫu bên dưới là một bản nhạc Lofi piano thư giãn, không bản quyền.
+        let urlString = "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3"
         
-        // Các biến trạng thái dùng trong khối DSP (Digital Signal Processing)
-        // Dùng con trỏ mảng để tránh lỗi đa luồng trong Swift
-        var brownState: Float = 0.0
-        var phase: Float = 0.0
-        
-        // Tần số dao động của sóng biển (0.08 Hz = khoảng 12.5 giây cho một chu kỳ sóng)
-        let waveFrequency: Float = 0.08
-        let phaseIncrement = (2.0 * .pi * waveFrequency) / sampleRate
-        
-        // AVAudioSourceNode tạo âm thanh trực tiếp từ code
-        sourceNode = AVAudioSourceNode { _, _, frameCount, audioBufferList -> OSStatus in
-            let ablPointer = UnsafeMutableAudioBufferListPointer(audioBufferList)
-            
-            for frame in 0..<Int(frameCount) {
-                // 1. Tạo Brown Noise (Mô phỏng âm thanh nước, loại bỏ tiếng xì chói tai của White Noise)
-                let whiteNoise = Float.random(in: -1.0...1.0)
-                brownState = (0.02 * whiteNoise) + (0.98 * brownState)
-                
-                // 2. Tạo LFO (Low-Frequency Oscillator) mô phỏng tiếng sóng vỗ dạt dào
-                phase += phaseIncrement
-                if phase > 2.0 * .pi {
-                    phase -= 2.0 * .pi
-                }
-                
-                // Chuyển đổi sóng Sine (từ -1 đến 1) sang dải biên độ (từ 0.2 đến 1.0) để sóng không bao giờ tắt hẳn
-                let lfo = (sin(phase) + 1.0) / 2.0
-                let amplitude = 0.2 + (lfo * 0.8)
-                
-                // 3. Kết hợp lại và khuếch đại nhẹ
-                let sample = brownState * amplitude * 3.0
-                
-                // Ghi sample vào tất cả các kênh (Stereo/Mono)
-                for buffer in ablPointer {
-                    let buf = UnsafeMutableBufferPointer<Float>(buffer)
-                    buf[frame] = sample
-                }
-            }
-            return noErr
+        guard let url = URL(string: urlString) else {
+            print("Link nhạc không hợp lệ")
+            return
         }
         
-        if let sourceNode = sourceNode {
-            engine.attach(sourceNode)
-            engine.connect(sourceNode, to: engine.mainMixerNode, format: format)
-        }
+        let asset = AVAsset(url: url)
+        let playerItem = AVPlayerItem(asset: asset)
         
-        engine.mainMixerNode.outputVolume = self.volume
+        // Sử dụng AVQueuePlayer chuyên trị cho việc lặp nhạc liền mạch
+        player = AVQueuePlayer(playerItem: playerItem)
+        player?.volume = self.volume
+        
+        // AVPlayerLooper giúp bài hát tự động quay vòng vô tận mà không bị ngắt quãng ở đoạn nối
+        if let player = player {
+            playerLooper = AVPlayerLooper(player: player, templateItem: playerItem)
+        }
     }
     
     func start() {
         do {
-            // Cấu hình Session hòa trộn âm thanh, không làm ngắt TTS hoặc các âm thanh khác
+            // Cấu hình âm thanh: Cho phép phát nhạc nền êm dịu, trộn chung với các âm thanh khác của hệ thống
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
+            try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
             try session.setActive(true)
             
-            try engine.start()
+            player?.play()
             DispatchQueue.main.async {
                 self.isPlaying = true
             }
         } catch {
-            print("Không thể khởi động RelaxAudioEngine: \(error.localizedDescription)")
+            print("Không thể khởi động Audio Session: \(error.localizedDescription)")
         }
     }
     
     func stop() {
-        engine.pause()
+        player?.pause()
         DispatchQueue.main.async {
             self.isPlaying = false
         }
     }
     
-    // Đảm bảo dọn dẹp bộ nhớ và tắt âm thanh khi class bị hủy
     deinit {
-        engine.stop()
+        player?.pause()
     }
 }

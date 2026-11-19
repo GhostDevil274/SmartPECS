@@ -1,3 +1,11 @@
+//
+//  BGMManager.swift
+//  SmartPECS
+//
+//  Created by Minh Anh Nguyễn Trần on 17/11/26.
+//
+import Combine
+
 import AVFoundation
 import Foundation
 
